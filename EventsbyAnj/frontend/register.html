@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Self-Registration - Events By Anj</title>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #121212; color: #ffffff; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box;">
+
+<div style="background: #1e1e1e; padding: 30px 25px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); width: 100%; max-width: 400px; text-align: center; border: 1px solid #2d2d2d; box-sizing: border-box;">
+    <img src="eva.jpg" alt="Events By Anj" style="width: 110px; height: auto; border-radius: 8px; margin-bottom: 12px; object-fit: contain;" onerror="this.style.display='none'">
+    
+    <!-- DYNAMIC EVENT TITLE HEADER -->
+    <h2 id="eventTitleHeader" style="color: #d4af37; margin-top: 0; margin-bottom: 20px; font-size: 22px; text-transform: uppercase; letter-spacing: 0.5px; word-break: break-word;">
+        Event Registration
+    </h2>
+    
+    <!-- REGISTRATION FORM -->
+    <form id="regForm" autocomplete="off">
+        <input type="text" id="name" placeholder="Full Name *" required style="width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #3d3d3d; background-color: #2b2b2b; color: #ffffff; border-radius: 8px; font-size: 16px; outline: none; box-sizing: border-box;" />
+        <input type="text" id="nickname" placeholder="Nickname (Optional)" style="width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #3d3d3d; background-color: #2b2b2b; color: #ffffff; border-radius: 8px; font-size: 16px; outline: none; box-sizing: border-box;" />
+        <button type="submit" id="btnSubmit" style="width: 100%; padding: 14px; background-color: #16a34a; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; box-sizing: border-box;">Submit & Check-In</button>
+    </form>
+
+    <!-- CONTAINER PARA SA TABLE NUMBER / CHECK-IN RESULT -->
+    <div id="resultContainer" style="display: none;"></div>
+    
+    <!-- ERROR MESSAGE BOX -->
+    <div id="errorMsgBox" style="margin-top: 10px; padding: 15px; border-radius: 12px; display: none; text-align: center; background-color: #7f1d1d; color: #fef2f2; border: 1px solid #dc2626;" aria-live="polite"></div>
+</div>
+
+<script>
+    const regForm = document.getElementById('regForm');
+    const resultContainer = document.getElementById('resultContainer');
+    const errorMsgBox = document.getElementById('errorMsgBox');
+    const eventTitleHeader = document.getElementById('eventTitleHeader');
+
+    // Real-Time Socket.IO Synchronization
+    function setupSocketSync() {
+        if (typeof io !== 'undefined') {
+            const socket = io();
+            
+            socket.on('guestListReload', () => {
+                fetchActiveEventTitle();
+            });
+
+            socket.on('connect', () => {
+                fetchActiveEventTitle();
+            });
+        }
+    }
+
+    // Kukunin ang pinakabagong Event Title mula sa backend server
+    async function fetchActiveEventTitle() {
+        try {
+            const res = await fetch('/api/event-info');
+            const data = await res.json();
+            if (data.success && data.event_title) {
+                eventTitleHeader.textContent = data.event_title;
+                document.title = `${data.event_title} - Self Registration`;
+            }
+        } catch (e) {
+            console.warn('Could not load custom event title:', e);
+        }
+    }
+
+    function showTableCard(guestName, tableNo, isAlreadyChecked = false) {
+        regForm.style.display = 'none';
+        errorMsgBox.style.display = 'none';
+
+        resultContainer.innerHTML = `
+            <div style="background-color: #064e3b; color: #ecfdf5; border: 1px solid #059669; padding: 20px; border-radius: 12px;">
+                <div style="font-size: 18px; font-weight: bold;">
+                    Thank you for registering, ${escapeHtml(guestName)}!
+                </div>
+                <div style="margin-top: 15px; padding: 25px 15px; background: #0f172a; border-radius: 12px; border: 2px solid #22c55e; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);">
+                    <p style="font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: #94a3b8; margin: 0 0 8px 0; font-weight: 600;">YOUR TABLE / SEAT NUMBER</p>
+                    <p style="font-size: 56px; font-weight: 900; color: #38bdf8; margin: 0; line-height: 1; word-break: break-word;">${escapeHtml(tableNo) || 'Unassigned'}</p>
+                </div>
+                ${isAlreadyChecked ? '<p style="font-size: 13px; color: #a7f3d0; margin-top: 10px; font-style: italic;">You are registered and checked in.</p>' : ''}
+                <button type="button" onclick="resetFormView()" style="width: 100%; background-color: transparent; border: 1px solid #059669; color: #a7f3d0; font-size: 13px; padding: 8px 12px; margin-top: 15px; font-weight: normal; cursor: pointer; border-radius: 8px;">Register Another Guest</button>
+            </div>
+        `;
+        resultContainer.style.display = 'block';
+    }
+
+    function resetFormView() {
+        localStorage.removeItem('event_checkin_data');
+        regForm.reset();
+        regForm.style.display = 'block';
+        resultContainer.style.display = 'none';
+        errorMsgBox.style.display = 'none';
+        const btnSubmit = document.getElementById('btnSubmit');
+        if (btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.innerText = 'Submit & Check-In';
+        }
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        fetchActiveEventTitle();
+        setupSocketSync();
+
+        const savedRegistration = localStorage.getItem('event_checkin_data');
+        if (savedRegistration) {
+            try {
+                const data = JSON.parse(savedRegistration);
+                if (data && data.name) {
+                    showTableCard(data.name, data.table_no, true);
+                }
+            } catch (e) {
+                localStorage.removeItem('event_checkin_data');
+            }
+        }
+    });
+
+    regForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const nameInput = document.getElementById('name');
+        const nicknameInput = document.getElementById('nickname');
+        const btnSubmit = document.getElementById('btnSubmit');
+
+        const name = nameInput.value.trim();
+        const nickname = nicknameInput.value.trim();
+
+        if (!name) return;
+
+        btnSubmit.disabled = true;
+        btnSubmit.innerText = 'Processing...';
+        errorMsgBox.style.display = 'none';
+
+        try {
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, nickname })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                const tableNo = data.table_no || 'Unassigned';
+                const guestName = data.guest?.name || name;
+                
+                localStorage.setItem('event_checkin_data', JSON.stringify({
+                    name: guestName,
+                    table_no: tableNo
+                }));
+
+                showTableCard(guestName, tableNo);
+            } else {
+                errorMsgBox.innerText = data.error || 'An error occurred during registration.';
+                errorMsgBox.style.display = 'block';
+                btnSubmit.disabled = false;
+                btnSubmit.innerText = 'Submit & Check-In';
+            }
+        } catch (err) {
+            errorMsgBox.innerText = 'Network error. Please make sure you are connected to the server network or Ngrok URL.';
+            errorMsgBox.style.display = 'block';
+            btnSubmit.disabled = false;
+            btnSubmit.innerText = 'Submit & Check-In';
+        }
+    });
+</script>
+
+</body>
+</html>

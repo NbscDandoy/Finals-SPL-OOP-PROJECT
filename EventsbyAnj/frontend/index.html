@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Events By Anj - Guest Management</title>
+    <!-- Google Fonts & FontAwesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+
+    <!-- Overlay for mobile sidebar navigation -->
+    <div id="sidebarOverlay" class="sidebar-overlay" aria-hidden="true"></div>
+
+    <div class="app-layout">
+        
+        <!-- Navigation Sidebar -->
+        <aside class="sidebar" id="appSidebar" aria-label="Main Navigation">
+            <div class="sidebar-header">
+                <img src="eva.jpg" alt="Events By Anj Logo" class="sidebar-brand-logo">
+            </div>
+
+            <nav class="sidebar-section">
+                <span class="sidebar-label" id="navLabel">NAVIGATION</span>
+                <div class="sidebar-menu" role="group" aria-labelledby="navLabel">
+                    <button type="button" id="btnNavDashboard" class="sidebar-nav-btn active">
+                        <i class="fa-solid fa-chart-pie"></i> Main Dashboard
+                    </button>
+                    <button type="button" id="btnNavTables" class="sidebar-nav-btn">
+                        <i class="fa-solid fa-chair"></i> Seating Capacity Overview
+                    </button>
+                    <button type="button" id="btnNavQrStand" class="sidebar-nav-btn">
+                        <i class="fa-solid fa-qrcode"></i> Registration QR Standee
+                    </button>
+                </div>
+            </nav>
+
+            <div class="sidebar-section">
+                <label for="excelFile" class="sidebar-label">IMPORT FILE</label>
+                <div id="drop-zone" class="drop-zone">
+                    <div id="dropZonePrompt" class="drop-zone-prompt">
+                        <div class="upload-placeholder">
+                            <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                            <p>Add a File or <label for="excelFile" class="file-label">browse</label></p>
+                        </div>
+                    </div>
+                    <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="file-input" multiple hidden />
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <span class="sidebar-label" id="recentFilesLabel">RECENTLY OPENED FILES</span>
+                <div id="recentFilesContainer" class="recent-files-container" aria-labelledby="recentFilesLabel">
+                    <p class="empty-state">No recent files</p>
+                </div>
+            </div>
+
+            <!-- SIDEBAR QR CODE SECTION -->
+            <div class="sidebar-section hidden" id="sidebarQrSection">
+                <span class="sidebar-label">SCAN FOR MOBILE ACCESS</span>
+                <div id="sidebarQrCodeContainer" class="sidebar-qr-container"></div>
+            </div>
+        </aside>
+
+        <!-- Main Content View -->
+        <main class="main-content">
+            
+            <header class="header">
+                <div class="header-container">
+                    <div class="header-title-group">
+                        <button type="button" id="btnToggleSidebar" class="mobile-sidebar-toggle" aria-label="Toggle Navigation Sidebar" aria-controls="appSidebar" aria-expanded="false">
+                            <i class="fa-solid fa-bars"></i>
+                        </button>
+                        <h1 id="mainTitle">Dashboard</h1>
+                        
+                        <!-- REAL-TIME SOCKET CONNECTION BADGE -->
+                        <div id="socketStatusBadge" class="connection-status status-connected" title="Socket.IO Real-Time Sync">
+                            <span class="status-dot"></span> <span id="socketStatusText">Live Updates Active</span>
+                        </div>
+
+                        <!-- PUBLIC NGROK LIVE BADGE & COPY LINK BUTTON -->
+                        <div id="ngrokStatusBadge" class="connection-status status-connected" style="background: rgba(22, 163, 74, 0.15); border: 1px solid #16a34a; color: #4ade80; display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px; border-radius: 20px; font-size: 12px; margin-left: 10px;">
+                            <i class="fa-solid fa-globe"></i>
+                            <span id="ngrokUrlText">Public Link Active</span>
+                            <button type="button" id="btnCopyPublicLink" style="background: #16a34a; color: #ffffff; border: none; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; transition: background 0.2s;" title="Copy Self-Registration URL">
+                                <i class="fa-solid fa-copy"></i> Copy Link
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="pull-switch-wrapper">
+                        <input type="checkbox" id="btnThemeToggle" class="pull-switch-checkbox" />
+                        <label for="btnThemeToggle" class="pull-switch-label" title="Toggle Light/Dark Theme">
+                            <span class="pull-string"></span>
+                            <span class="pull-handle">
+                                <svg class="theme-icon icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="5"></circle>
+                                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                                </svg>
+                                <svg class="theme-icon icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                </svg>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </header>
+
+            <section id="activeFilesContainer" class="active-files-section" aria-label="Active Uploaded Files"></section>
+
+            <!-- Dashboard Main View Panel -->
+            <div id="mainDashboardView" class="view-panel">
+                <section class="stats-container" aria-label="Guest Statistics Summary">
+                    <div class="stat-card total-card">
+                        <div class="stat-content">
+                            <span class="stat-title">Total Guests</span>
+                            <strong id="stat-total" class="stat-num">0</strong>
+                        </div>
+                        <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+                    </div>
+                    <div class="stat-card checked-in">
+                        <div class="stat-content">
+                            <span class="stat-title">Checked-In</span>
+                            <strong id="stat-checked" class="stat-num">0</strong>
+                        </div>
+                        <div class="stat-icon"><i class="fa-solid fa-user-check"></i></div>
+                    </div>
+                    <div class="stat-card not-checked">
+                        <div class="stat-content">
+                            <span class="stat-title">Not Checked-In</span>
+                            <strong id="stat-not-checked" class="stat-num">0</strong>
+                        </div>
+                        <div class="stat-icon"><i class="fa-solid fa-user-clock"></i></div>
+                    </div>
+                </section>
+
+                <div class="table-wrapper-card">
+                    <section class="controls" aria-label="Data Operations">
+                        <div class="controls-left">
+                            <button type="button" id="btnAddGuest" class="btn btn-primary">
+                                <i class="fa-solid fa-plus"></i> Add Guest
+                            </button>
+                        </div>
+                        <div class="controls-right">
+                            <button type="button" id="btnSaveExcel" class="btn btn-success">
+                                <i class="fa-solid fa-file-excel"></i> Save Excel
+                            </button>
+                            <button type="button" id="btnSaveDocs" class="btn btn-secondary">
+                                <i class="fa-solid fa-file-word"></i> Save Docs
+                            </button>
+                        </div>
+                    </section>
+
+                    <section class="filter-row" aria-label="Guest Filters and Sorting">
+                        <div class="search-group">
+                            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                            <input 
+                                type="search" 
+                                id="search" 
+                                placeholder="Search by name or nickname..." 
+                                class="search-input" 
+                                aria-label="Search by name or nickname"
+                            />
+                        </div>
+
+                        <select id="filterCategory" class="filter-select" aria-label="Filter by Category">
+                            <option value="">All Categories</option>
+                            <option value="VIP">VIP</option>
+                            <option value="Guest">Guest</option>
+                            <option value="Walk-in Guest">Walk-In Guest</option>
+                        </select>
+
+                        <select id="filterTable" class="filter-select" aria-label="Filter by Table Number">
+                            <option value="">All Tables</option>
+                        </select>
+
+                        <select id="sortBy" class="filter-select" aria-label="Sort Guests By">
+                            <option value="name-asc">Sort by: Name (A-Z)</option>
+                            <option value="name-desc">Sort by: Name (Z-A)</option>
+                            <option value="table-asc">Sort by: Table (Ascending)</option>
+                            <option value="status-checked">Sort by: Checked-In First</option>
+                            <option value="status-unchecked">Sort by: Not Checked-In First</option>
+                            <option value="time-desc">Sort by: Latest Check-In</option>
+                        </select>
+                    </section>
+
+                    <section class="table-container" aria-label="Guest List Table">
+                        <table class="main-guest-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">NAME</th>
+                                    <th scope="col">NICKNAME</th>
+                                    <th scope="col">CATEGORY</th>
+                                    <th scope="col">TABLE NO.</th>
+                                    <th scope="col">STATUS</th>
+                                    <th scope="col">CHECK-IN TIME</th>
+                                    <th scope="col" class="text-center">ACTION</th>
+                                </tr>
+                            </thead>
+                            <tbody id="guestTable">
+                            </tbody>
+                        </table>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Tables Seating Capacity View Panel -->
+            <div id="mainTablesView" class="view-panel hidden">
+                <section class="dashboard-occupation-section">
+                    <div class="seating-header-container">
+                        <h3 class="seating-title">Seating Capacity Overview</h3>
+
+                        <div class="attendance-rate-card">
+                            <div class="rate-circle">
+                                <span id="overallAttendancePct">0%</span>
+                            </div>
+                            <div class="rate-details">
+                                <span class="rate-label">ATTENDANCE RATE</span>
+                                <span class="rate-counts"><strong id="checkedInCount">0</strong> / <span id="totalGuestsCount">0</span> Checked-In</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="standaloneOccupationGrid" class="main-occupation-grid">
+                        <p class="empty-state">No table assignments found.</p>
+                    </div>
+                </section>
+            </div>
+
+            <!-- REGISTRATION QR STANDEE PANEL (Organizers) -->
+            <div id="mainQrStandView" class="view-panel hidden">
+                <div class="card-wrapper qr-standee-wrapper">
+                    <h2>Online Registration Setup</h2>
+                    
+                    <!-- EDITABLE EVENT TITLE FOR EMPLOYEES -->
+                    <div class="form-group" style="max-width: 480px; margin: 0 auto 20px auto;">
+                        <label for="inputEventTitle" style="font-weight: 600; color: var(--subtext-color);">Set Event Title / Name:</label>
+                        <div style="display: flex; gap: 8px; margin-top: 6px;">
+                            <input type="text" id="inputEventTitle" class="form-control" placeholder="e.g. Anj & Jay Wedding" />
+                            <button type="button" id="btnUpdateEventTitle" class="btn btn-primary" style="white-space: nowrap;">
+                                <i class="fa-solid fa-floppy-disk"></i> Save Title
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Printable Container -->
+                    <div id="printableQrCard" class="printable-qr-card">
+                        <h3 id="displayQrEventTitle" class="qr-welcome-title">WELCOME TO THE EVENT</h3>
+                        <p class="qr-subtitle">Scan to Self Check-In & Find Your Seat</p>
+                        
+                        <div id="eventQrStandContainer" class="qr-code-display"></div>
+
+                        <p class="qr-file-label" id="qrStandFileLabel">Active File: Default Event</p>
+                    </div>
+
+                    <div class="qr-actions" style="margin-top: 18px;">
+                        <button type="button" class="btn btn-primary" onclick="window.print()">
+                            <i class="fa-solid fa-print"></i> Print QR Standee
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GUEST SELF CHECK-IN VIEW (Mobile/Guest View) -->
+            <div id="mainGuestSelfCheckInView" class="view-panel hidden">
+                <div class="card-wrapper self-checkin-wrapper">
+                    <img src="eva.jpg" alt="Events By Anj" class="self-checkin-logo">
+                    <h2>Welcome Guests!</h2>
+                    <p class="self-checkin-desc">Search your name to see your assigned table number.</p>
+
+                    <div class="search-group self-search-group">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" id="selfCheckInSearch" class="search-input" placeholder="Type Your Name or Nickname..." />
+                    </div>
+
+                    <ul id="selfCheckInResultList" class="guest-select-list hidden">
+                        <!-- Dynamic guest search list items will render here -->
+                    </ul>
+
+                    <!-- Seat Result Display -->
+                    <div id="selfCheckInResultCard" class="seat-result-card hidden">
+                        <h3 id="selfGuestName" class="seat-guest-name">--</h3>
+                        <p class="seat-label">Your assigned seating:</p>
+                        <div id="selfTableBadge" class="seat-table-number">TABLE --</div>
+                        <button type="button" id="btnSelfConfirmCheckIn" class="btn btn-success btn-block">
+                            <i class="fa-solid fa-circle-check"></i> Check-In Now
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Edit/Add Guest Modal -->
+    <div id="editModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="editModalTitle">Guest Details</h2>
+                <button type="button" class="modal-close" id="btnCloseEditModal" aria-label="Close Modal">&times;</button>
+            </div>
+            <form id="editGuestForm">
+                <input type="hidden" id="editGuestId" />
+                
+                <div class="form-group">
+                    <label for="editName">Guest Name *</label>
+                    <input type="text" id="editName" class="form-control" required placeholder="Enter full name" />
+                </div>
+
+                <div class="form-group">
+                    <label for="editNickname">Nickname</label>
+                    <input type="text" id="editNickname" class="form-control" placeholder="Optional nickname" />
+                </div>
+
+                <div class="form-group">
+                    <label for="editCategory">Category</label>
+                    <select id="editCategory" class="form-control">
+                        <option value="Guest">Guest</option>
+                        <option value="VIP">VIP</option>
+                        <option value="Walk-in Guest">Walk-in Guest</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="editTable">Table Number</label>
+                    <input type="text" id="editTable" class="form-control" placeholder="Table 1" />
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" id="btnCancelEdit">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Guest</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table Guests Breakdown Modal -->
+    <div id="tableGuestsModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="tableModalTitle">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="tableModalTitle">Table Details</h2>
+                <button type="button" class="modal-close" id="btnCloseTableModal" aria-label="Close Table Modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <ul id="tableGuestsList" class="table-guest-list">
+                </ul>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-primary" id="btnDismissTableModal">Close</button>
+            </div>
+        </div>
+    </div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
